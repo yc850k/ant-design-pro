@@ -1,4 +1,8 @@
-import moment from 'moment';
+import moment from "moment";
+import Store from "store/dist/store.modern";
+import expirePlugin from "store/plugins/expire";
+
+Store.addPlugin(expirePlugin);
 
 export function fixedZero(val) {
   return val * 1 < 10 ? `0${val}` : val;
@@ -8,14 +12,14 @@ export function getTimeDistance(type) {
   const now = new Date();
   const oneDay = 1000 * 60 * 60 * 24;
 
-  if (type === 'today') {
+  if (type === "today") {
     now.setHours(0);
     now.setMinutes(0);
     now.setSeconds(0);
     return [moment(now), moment(now.getTime() + (oneDay - 1000))];
   }
 
-  if (type === 'week') {
+  if (type === "week") {
     let day = now.getDay();
     now.setHours(0);
     now.setMinutes(0);
@@ -27,33 +31,59 @@ export function getTimeDistance(type) {
       day -= 1;
     }
 
-    const beginTime = now.getTime() - (day * oneDay);
+    const beginTime = now.getTime() - day * oneDay;
 
-    return [moment(beginTime), moment(beginTime + ((7 * oneDay) - 1000))];
+    return [moment(beginTime), moment(beginTime + (7 * oneDay - 1000))];
   }
 
-  if (type === 'month') {
+  if (type === "month") {
     const year = now.getFullYear();
     const month = now.getMonth();
-    const nextDate = moment(now).add(1, 'months');
+    const nextDate = moment(now).add(1, "months");
     const nextYear = nextDate.year();
     const nextMonth = nextDate.month();
 
-    return [moment(`${year}-${fixedZero(month + 1)}-01 00:00:00`), moment(moment(`${nextYear}-${fixedZero(nextMonth + 1)}-01 00:00:00`).valueOf() - 1000)];
+    return [
+      moment(`${year}-${fixedZero(month + 1)}-01 00:00:00`),
+      moment(
+        moment(
+          `${nextYear}-${fixedZero(nextMonth + 1)}-01 00:00:00`
+        ).valueOf() - 1000
+      )
+    ];
   }
 
-  if (type === 'year') {
+  if (type === "year") {
     const year = now.getFullYear();
 
     return [moment(`${year}-01-01 00:00:00`), moment(`${year}-12-31 23:59:59`)];
   }
 }
 
-export function getPlainNode(nodeList, parentPath = '') {
+function redirectToLogin(nextState, replace) {
+  alert("redirectLogin call");
+  if (!isLogin()) {
+    replace({
+      pathname: "/user/login",
+      state: {
+        nextPathname: nextState.location.pathname,
+        nextSearch: location.search
+      }
+    });
+  }
+}
+
+const noLogin = new Set([
+  "/user",
+  "/user/login",
+  "/exception/404",
+  "/no-power"
+]);
+export function getPlainNode(nodeList, parentPath = "") {
   const arr = [];
-  nodeList.forEach((node) => {
+  nodeList.forEach(node => {
     const item = node;
-    item.path = `${parentPath}/${item.path || ''}`.replace(/\/+/g, '/');
+    item.path = `${parentPath}/${item.path || ""}`.replace(/\/+/g, "/");
     item.exact = true;
     if (item.children && !item.component) {
       arr.push(...getPlainNode(item.children, item.path));
@@ -61,6 +91,9 @@ export function getPlainNode(nodeList, parentPath = '') {
       if (item.children && item.component) {
         item.exact = false;
       }
+      // if (!noLogin.has(item.path)) {
+      //   item.onEnter = redirectToLogin;
+      // }
       arr.push(item);
     }
   });
@@ -68,27 +101,71 @@ export function getPlainNode(nodeList, parentPath = '') {
 }
 
 export function digitUppercase(n) {
-  const fraction = ['角', '分'];
-  const digit = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
-  const unit = [
-    ['元', '万', '亿'],
-    ['', '拾', '佰', '仟'],
-  ];
+  const fraction = ["角", "分"];
+  const digit = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+  const unit = [["元", "万", "亿"], ["", "拾", "佰", "仟"]];
   let num = Math.abs(n);
-  let s = '';
+  let s = "";
   fraction.forEach((item, index) => {
-    s += (digit[Math.floor(num * 10 * (10 ** index)) % 10] + item).replace(/零./, '');
+    s += (digit[Math.floor(num * 10 * 10 ** index) % 10] + item).replace(
+      /零./,
+      ""
+    );
   });
-  s = s || '整';
+  s = s || "整";
   num = Math.floor(num);
   for (let i = 0; i < unit[0].length && num > 0; i += 1) {
-    let p = '';
+    let p = "";
     for (let j = 0; j < unit[1].length && num > 0; j += 1) {
       p = digit[num % 10] + unit[1][j] + p;
       num = Math.floor(num / 10);
     }
-    s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + unit[0][i] + s;
+    s = p.replace(/(零.)*零$/, "").replace(/^$/, "零") + unit[0][i] + s;
   }
 
-  return s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
+  return s
+    .replace(/(零.)*零元/, "元")
+    .replace(/(零.)+/g, "零")
+    .replace(/^整$/, "零元整");
 }
+
+const isLogin = () => {
+  const name = Store.get("user_name");
+  return name && name.length > 0;
+};
+
+const setLoginIn = (nickName, accessToken, power, allPathPowers) => {
+  const now = new Date();
+  now.setDate(now.getDate() + 1);
+  // Cookie.set('user_session', now.getTime())
+  Store.set("user_name", nickName);
+  Store.set("access_token", accessToken);
+  Store.set("user_power", power);
+  Store.set("allPathPowers", JSON.stringify(allPathPowers));
+};
+
+const setLoginOut = () => {
+  Store.remove("user_name");
+  Store.remove("access_token");
+  Store.remove("user_power");
+  Store.remove("allPathPowers");
+};
+
+const checkPower = (optionId, curPowers = []) => {
+  return curPowers.some(cur => cur === optionId);
+};
+
+let allPathPowers = null;
+const getCurPowers = curPath => {
+  if (!allPathPowers) {
+    allPathPowers = JSON.parse(Store.get("allPathPowers"));
+  }
+  const curPathPower = allPathPowers && allPathPowers[curPath];
+  // cur =2 检测查看页面内容权限
+  if (!curPathPower || !curPathPower.find(cur => cur === 2)) {
+    return false;
+  }
+  return curPathPower; // 返回curPathPower，是为方便页面跳转验证权限后，dispatch当然权限
+};
+
+export { Store, isLogin, setLoginIn, setLoginOut, checkPower, getCurPowers };

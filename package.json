@@ -5,8 +5,10 @@
   "private": true,
   "scripts": {
     "precommit": "npm run lint-staged",
-    "start": "roadhog server",
-    "start:no-proxy": "cross-env NO_PROXY=true roadhog server",
+    "start":
+      "set PORT=80&&set BROWSER=none&&set HOST=hanggao.pipacoding.com&& roadhog server",
+    "start:no-proxy":
+      "set NO_PROXY=true&&set PORT=80&&set BROWSER=none&&set HOST=hanggao.pipacoding.com&& roadhog server",
     "build": "roadhog build",
     "site": "roadhog-api-doc static && gh-pages -d dist",
     "analyze": "roadhog build --analyze",
@@ -19,7 +21,7 @@
     "test:all": "node ./tests/run-tests.js"
   },
   "dependencies": {
-    "antd": "^3.0.0",
+    "antd": "^3.0.1",
     "babel-polyfill": "^6.26.0",
     "babel-runtime": "^6.9.2",
     "classnames": "^2.2.5",
@@ -39,7 +41,8 @@
     "react-container-query": "^0.9.1",
     "react-document-title": "^2.0.3",
     "react-dom": "^16.0.0",
-    "react-fittext": "^1.0.0"
+    "react-fittext": "^1.0.0",
+    "store": "^2.0.12"
   },
   "devDependencies": {
     "babel-eslint": "^8.0.1",
