@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { Component } from "react";
 import { connect } from "dva";
 import { routerRedux, Link } from "dva/router";
@@ -27,21 +28,13 @@ export default class Login extends Component {
     type: "account"
   };
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.login.status === "ok") {
-      this.props.dispatch(routerRedux.push("/"));
-    }
-  }
-
   componentWillUnmount() {
     clearInterval(this.interval);
   }
 
-  onSwitch = key => {
-    this.setState({
-      type: key
-    });
-  };
+  onSwitch = (type) => {
+    this.setState({ type });
+  }
 
   onGetCaptcha = () => {
     let count = 59;
@@ -57,13 +50,17 @@ export default class Login extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
-    const { type } = this.state;
-    this.props.form.validateFields({ force: true }, (err, values) => {
-      if (!err) {
-        this.props.dispatch({
-          type: `login/${type}Submit`,
-          payload: values
-        });
+    this.props.form.validateFields({ force: true },
+      (err, values) => {
+        if (!err) {
+          this.props.dispatch({
+            type: 'login/login',
+            payload: {
+              ...values,
+              type: this.state.type,
+            },
+          });
+        }
       }
     });
   };

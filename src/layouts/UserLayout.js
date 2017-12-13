@@ -1,10 +1,10 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Link, Route } from "dva/router";
-import DocumentTitle from "react-document-title";
-import { Icon } from "antd";
-import GlobalFooter from "../components/GlobalFooter";
-import styles from "./UserLayout.less";
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Link, Route } from 'dva/router';
+import DocumentTitle from 'react-document-title';
+import { Icon } from 'antd';
+import GlobalFooter from '../components/GlobalFooter';
+import styles from './UserLayout.less';
 
 const links = [
   {
